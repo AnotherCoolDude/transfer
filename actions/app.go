@@ -63,6 +63,7 @@ func App() *buffalo.App {
 		app.GET("/basecamp/show", BasecampShow)
 		app.GET("/callback", BasecampCallback)
 
+		app.GET("/proad/show", ProadShow)
 		app.ServeFiles("/", assetsBox) // serve files from the public directory
 	}
 
