@@ -60,10 +60,13 @@ func App() *buffalo.App {
 
 		app.GET("/", HomeHandler)
 
-		app.GET("/basecamp/show", BasecampShow)
-		app.GET("/callback", BasecampCallback)
+		app.GET("/basecamp/callback", BasecampCallback)
+		app.GET("/basecamp/show", BasecampAuth(BasecampShow))
 
 		app.GET("/proad/show", ProadShow)
+
+		app.GET("/transfer/show", BasecampAuth(TransferShow))
+
 		app.ServeFiles("/", assetsBox) // serve files from the public directory
 	}
 

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/AnotherCoolDude/transfer/models"
 	"github.com/rs/xid"
 	"golang.org/x/oauth2"
 	"io"
@@ -84,7 +85,8 @@ func (c *basecampclient) addHeader(request *http.Request) {
 	request.Header.Add("User-Agent", fmt.Sprintf("%s (%s)", c.appName, c.email))
 }
 
-func (c *basecampclient) authCodeURL() string {
+// AuthCodeURL returns the url where the client needs to authenticate
+func (c *basecampclient) AuthCodeURL() string {
 	return c.oauthConfig.AuthCodeURL(c.state, oauth2.SetAuthURLParam("type", "web_server"))
 }
 
@@ -102,7 +104,8 @@ func (c *basecampclient) handleCallback(request *http.Request) error {
 	return nil
 }
 
-func (c *basecampclient) isValid() bool {
+// IsValid returns wether the the basecamp client has a valid token
+func (c *basecampclient) IsValid() bool {
 	if !c.token.Valid() {
 		return false
 	}
@@ -131,4 +134,20 @@ func (c *basecampclient) receiveID() error {
 	accDetails := accounts[0].(map[string]interface{})
 	c.id = int(accDetails["id"].(float64))
 	return nil
+}
+
+func unmarshalBCProjects(response *http.Response) ([]models.BCProject, error) {
+	var bcprojects []models.BCProject
+	bytes, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return bcprojects, err
+	}
+	defer response.Body.Close()
+
+	err = json.Unmarshal(bytes, &bcprojects)
+	if err != nil {
+		return bcprojects, err
+	}
+
+	return bcprojects, nil
 }

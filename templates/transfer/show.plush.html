@@ -18,37 +18,35 @@
     </div>
 </header>
 
-<h1>Proad -> Show</h1>
+<h1>Transfer -> Show</h1>
 
 <div class="row">
     <div class="col-md-12">
         <div class="subtitle">
             <div class="container">
-              <h3>Proad Projects</h3>
+              <h3>Project comparison</h3>
             </div>
           </div>
           <div class="table-responsive">
               <table class="table table-striped">
                 <thead class="thead-dark">
                     <tr text-align="left">
-                        <th>ID</th>
-                        <th>Projectno</th>
-                        <th>Todos</th>
+                        <th>Basecamp Projectno</th>
+                        <th>Proad Projectno</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <%= for (p) in proad { %>
+                    <%= for (i, b) in basecamp { %>
                         <tr>
                            <td>
-                               <%= p.Urno %>
+                               <%= b.Projectno() %>
                            </td> 
                            <td>
-                            <%= p.Projectno %>
-                           </td>
-                           <td>
-                               <%= for (t) in todos { %>
-                                <li> <%= t.Shortinfo %> </li>
+                            <%= for (p) in proad { %>
+                                <%= if (p.Projectno == b.Projectno()) { %>
+                                    <%= p.Projectno %>
                                 <% } %>
+                            <% } %>
                            </td>
                         </tr>
                     <% } %>

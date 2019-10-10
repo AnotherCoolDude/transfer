@@ -3,6 +3,7 @@ package models
 import (
 	"github.com/gobuffalo/nulls"
 	"time"
+	"unicode"
 )
 
 // BCProject wraps the json response from bascamp projects into a go struct
@@ -36,6 +37,11 @@ func (p *BCProject) Projectno() string {
 		return ""
 	}
 	nr := p.Name[:14]
-	// Todo: verify projectno
+	for i := 0; i < 4; i++ {
+		r := rune(nr[i])
+		if !unicode.IsUpper(r) {
+			return ""
+		}
+	}
 	return nr
 }
