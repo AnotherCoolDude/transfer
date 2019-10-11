@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/AnotherCoolDude/transfer/models"
 	"github.com/rs/xid"
 	"golang.org/x/oauth2"
 	"io"
@@ -49,7 +48,19 @@ func defaultBasecampclient() *basecampclient {
 	}
 }
 
-func (c *basecampclient) do(method, URL string, body io.Reader) (*http.Response, error) {
+func (c *basecampclient) unmarshal(URL string, query map[string]string, model interface{}) error {
+	resp, err := c.do("GET", URL, http.NoBody, query)
+	if err != nil {
+		return err
+	}
+	err = unmarshal(resp, &model)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (c *basecampclient) do(method, URL string, body io.Reader, query map[string]string) (*http.Response, error) {
 	requestURL, err := url.Parse(URL)
 	if err != nil {
 		fmt.Println("could not parse url")
@@ -65,12 +76,22 @@ func (c *basecampclient) do(method, URL string, body io.Reader) (*http.Response,
 		return nil, err
 	}
 	c.addHeader(req)
+	q := req.URL.Query()
+	for key, value := range query {
+		q.Add(key, value)
+	}
+	req.URL.RawQuery = q.Encode()
 	resp, err := c.httpclient.Do(req)
 	if err != nil {
 		fmt.Println("error making request " + err.Error())
 		return nil, err
 	}
 	return resp, nil
+}
+
+func (c *basecampclient) async(method, URL string, body io.Reader, query map[string]string, responseChanel chan asyncResponse) {
+	resp, err := c.do(method, URL, body, query)
+	responseChanel <- asyncResponse{response: resp, err: err}
 }
 
 func (c *basecampclient) baseURL() *url.URL {
@@ -119,7 +140,7 @@ func (c *basecampclient) receiveID() error {
 	if !c.token.Valid() {
 		return errors.New("need valid token to receive ID")
 	}
-	resp, err := c.do("GET", "https://launchpad.37signals.com/authorization.json", http.NoBody)
+	resp, err := c.do("GET", "https://launchpad.37signals.com/authorization.json", http.NoBody, query{})
 	if err != nil {
 		return errors.New("[basecamp.go/receiveID] couldn't make request to auth endpoint")
 	}
@@ -134,20 +155,4 @@ func (c *basecampclient) receiveID() error {
 	accDetails := accounts[0].(map[string]interface{})
 	c.id = int(accDetails["id"].(float64))
 	return nil
-}
-
-func unmarshalBCProjects(response *http.Response) ([]models.BCProject, error) {
-	var bcprojects []models.BCProject
-	bytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return bcprojects, err
-	}
-	defer response.Body.Close()
-
-	err = json.Unmarshal(bytes, &bcprojects)
-	if err != nil {
-		return bcprojects, err
-	}
-
-	return bcprojects, nil
 }

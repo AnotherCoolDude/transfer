@@ -4,6 +4,7 @@ import (
 	"github.com/AnotherCoolDude/transfer/models"
 	"github.com/gobuffalo/buffalo"
 	"net/http"
+	"sync"
 )
 
 var (
@@ -14,38 +15,49 @@ var (
 // BasecampShow default implementation.
 func BasecampShow(c buffalo.Context) error {
 
-	resp, err := BCClient.do("GET", "/projects.json", http.NoBody)
+	var wg sync.WaitGroup
+
+	var projects []models.BCProject
+	err := BCClient.unmarshal("/projects.json", query{}, &projects)
 	if err != nil {
 		return c.Error(404, err)
 	}
 
-	bcprj, err := unmarshalBCProjects(resp)
-
-	if err != nil {
-		return c.Error(404, err)
-	}
-
-	paprj := []models.PAProject{}
-
-	for _, p := range bcprj {
-		if p.Projectno() == "" {
-			continue
+	sets := []models.BCTodoset{}
+	for _, p := range projects {
+		var pset models.BCTodoset
+		err := BCClient.unmarshal(p.Dock[2].URL, query{}, &pset)
+		if err != nil {
+			wg.Done()
+			return err
 		}
-		paresp, err := PAClient.do("GET", "projects", http.NoBody, map[string]string{"projectno": p.Projectno()})
+		sets = append(sets, pset)
+		return nil
+	}
+	wg.Wait()
+
+	lists := []models.BCTodolist{}
+	for _, s := range sets {
+		var slists []models.BCTodolist
+		err := BCClient.unmarshal(s.TodolistsURL, query{}, &slists)
 		if err != nil {
 			return c.Error(404, err)
 		}
-		prjs, err := unmarshalPAProjects(paresp)
+		lists = append(lists, slists...)
+	}
+
+	todos := []models.BCTodo{}
+	for _, l := range lists {
+		var ltodos []models.BCTodo
+		err := BCClient.unmarshal(l.TodosURL, query{}, &ltodos)
 		if err != nil {
 			return c.Error(404, err)
 		}
-		paprj = append(paprj, prjs...)
+		todos = append(todos, ltodos...)
 	}
 
-	c.Set("basecamp", bcprj)
-	c.Set("proad", paprj)
-	return c.Render(200, r.HTML("basecamp/show.html"))
-	// return c.Render(200, responseRenderer{unmarshalledBytes: bytes})
+	return c.Render(200, r.JSON(todos))
+
 }
 
 // BasecampCallback handles the callback from basecamp upon authentication

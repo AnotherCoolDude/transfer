@@ -9,11 +9,8 @@ import (
 // TransferShow default implementation.
 func TransferShow(c buffalo.Context) error {
 
-	resp, err := BCClient.do("GET", "/projects.json", http.NoBody)
-	if err != nil {
-		c.Error(404, err)
-	}
-	bcprojects, err := unmarshalBCProjects(resp)
+	var bcprojects []models.BCProject
+	err := BCClient.unmarshal("/projects.json", query{}, &bcprojects)
 	if err != nil {
 		c.Error(404, err)
 	}
@@ -39,7 +36,7 @@ func TransferShow(c buffalo.Context) error {
 		}
 		paprojects = append(paprojects, prj...)
 	}
-	
+
 	c.Set("basecamp", bcprojects)
 	c.Set("proad", paprojects)
 	return c.Render(200, r.HTML("transfer/show.html"))
