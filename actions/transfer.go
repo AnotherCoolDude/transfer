@@ -1,9 +1,13 @@
 package actions
 
 import (
+	"net/http"
+	"strconv"
+
+	"github.com/mitchellh/mapstructure"
+
 	"github.com/AnotherCoolDude/transfer/models"
 	"github.com/gobuffalo/buffalo"
-	"net/http"
 )
 
 // TransferShow default implementation.
@@ -14,29 +18,52 @@ func TransferShow(c buffalo.Context) error {
 	if err != nil {
 		c.Error(404, err)
 	}
-	respChan := make(chan asyncResponse)
+	unmarshalChan := make(chan asyncUnmarshal)
 	counter := 0
 	for _, p := range bcprojects {
 		if p.Projectno() == "" {
 			continue
 		}
+		go PAClient.async("GET", "projects", http.NoBody, map[string]string{"projectno": p.Projectno()}, unmarshalChan)
 		counter++
-		go PAClient.async("GET", "projects", http.NoBody, map[string]string{"projectno": p.Projectno()}, respChan)
 	}
-	results := make([]asyncResponse, counter)
-	var paprojects []models.PAProject
-	for i := range results {
-		results[i] = <-respChan
-		if results[i].err != nil {
-			return c.Error(404, results[i].err)
+	paprojects := []models.PAProject{}
+	result := make([]asyncUnmarshal, counter)
+
+	for i := range result {
+		result[i] = <-unmarshalChan
+		if result[i].err != nil {
+			return c.Error(404, result[i].err)
 		}
-		prj, err := unmarshalPAProjects(results[i].response)
+		var p []models.PAProject
+		err = mapstructure.Decode(result[i].model, &p)
 		if err != nil {
 			return c.Error(404, err)
 		}
-		paprojects = append(paprojects, prj...)
+		paprojects = append(paprojects, p...)
 	}
 
+	counter = 0
+	for _, p := range paprojects {
+		go PAClient.async("GET", "tasks", http.NoBody, query{"project": strconv.Itoa(p.Urno)}, unmarshalChan)
+		counter++
+	}
+	result = make([]asyncUnmarshal, counter)
+	tt := []models.PATodo{}
+	for i := range result {
+		result[i] = <-unmarshalChan
+		if result[i].err != nil {
+			return c.Error(404, err)
+		}
+		var t []models.PATodo
+		err = mapstructure.Decode(result[i].model, &t)
+		if err != nil {
+			return c.Error(404, err)
+		}
+		tt = append(tt, t...)
+	}
+
+	// return c.Render(200, render.JSON(paprojects))
 	c.Set("basecamp", bcprojects)
 	c.Set("proad", paprojects)
 	return c.Render(200, r.HTML("transfer/show.html"))

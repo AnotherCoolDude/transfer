@@ -2,10 +2,7 @@ package actions
 
 import (
 	"crypto/tls"
-	"encoding/json"
-	"github.com/AnotherCoolDude/transfer/models"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -57,52 +54,24 @@ func (c *proadclient) do(method, URL string, body io.Reader, query map[string]st
 	return resp, nil
 }
 
-func (c *proadclient) async(method, URL string, body io.Reader, query map[string]string, responseChanel chan asyncResponse) {
+func (c *proadclient) async(method, URL string, body io.Reader, query map[string]string, unmarshalChan chan asyncUnmarshal) {
+	au := asyncUnmarshal{}
 	resp, err := c.do(method, URL, body, query)
-	responseChanel <- asyncResponse{response: resp, err: err}
-}
-
-func unmarshalPAProjects(response *http.Response) ([]models.PAProject, error) {
-	type projectlist struct {
-		Projects []models.PAProject `json:"project_list"`
-	}
-	var pl projectlist
-
-	bytes, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return pl.Projects, err
+		au.err = err
+		unmarshalChan <- au
+		return
 	}
-	defer response.Body.Close()
-
-	err = json.Unmarshal(bytes, &pl)
-	if err != nil {
-		return pl.Projects, err
-	}
-
-	return pl.Projects, nil
-}
-
-func unmarshalPATodos(response *http.Response) ([]models.PATodo, error) {
-	type todolist struct {
-		Todos []models.PATodo `json:"todo_list"`
-	}
-	var tl todolist
-
-	bytes, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return tl.Todos, err
-	}
-	defer response.Body.Close()
-
-	err = json.Unmarshal(bytes, &tl)
-	if err != nil {
-		return tl.Todos, err
-	}
-
-	return tl.Todos, nil
+	au.err = unmarshalProad(resp, &au.model)
+	unmarshalChan <- au
 }
 
 type asyncResponse struct {
 	response *http.Response
 	err      error
+}
+
+type asyncUnmarshal struct {
+	model interface{}
+	err   error
 }
