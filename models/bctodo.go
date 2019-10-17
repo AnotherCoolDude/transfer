@@ -2,6 +2,7 @@ package models
 
 import (
 	"time"
+	"unicode"
 )
 
 // BCTodo is a struct generated from basecamps json response
@@ -32,4 +33,19 @@ type BCTodo struct {
 	Assignees             []string  `json:"assignees"`
 	CompletionSubscribers []string  `json:"completion_subscribers"`
 	CompletionURL         string    `json:"completion_url"`
+}
+
+// Projectno returns the projectno of the todo
+func (t *BCTodo) Projectno() string {
+	if len(t.Bucket.Name) < 14 {
+		return ""
+	}
+	nr := t.Bucket.Name[:14]
+	for i := 0; i < 4; i++ {
+		r := rune(nr[i])
+		if !unicode.IsUpper(r) {
+			return ""
+		}
+	}
+	return nr
 }

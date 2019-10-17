@@ -29,6 +29,7 @@ type BCProject struct {
 		AppURL   string    `json:"app_url" db:"app_url"`
 	} `json:"dock" db:"dock"`
 	Bookmarked bool `json:"bookmarked" db:"bookmarked"`
+	Todos      []BCTodo
 }
 
 // Projectno returns the projectnumber or an empty string if not available

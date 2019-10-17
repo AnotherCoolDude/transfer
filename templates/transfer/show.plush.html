@@ -24,34 +24,38 @@
     <div class="col-md-12">
         <div class="subtitle">
             <div class="container">
-              <h3>Project comparison</h3>
+                <h3>Project comparison</h3>
             </div>
-          </div>
-          <div class="table-responsive">
-              <table class="table table-striped">
+        </div>
+        <div class="table-responsive">
+            <table class="table table-striped">
                 <thead class="thead-dark">
                     <tr text-align="left">
-                        <th>Basecamp Projectno</th>
-                        <th>Proad Projectno</th>
+                        <th>Basecamp </th>
+                        <th>Proad </th>
                     </tr>
                 </thead>
                 <tbody>
-                    <%= for (i, b) in basecamp { %>
-                        <tr>
-                           <td>
-                               <%= b.Projectno() %>
-                           </td> 
-                           <td>
-                            <%= for (p) in proad { %>
-                                <%= if (p.Projectno == b.Projectno()) { %>
-                                    <%= p.Projectno %>
-                                <% } %>
+                    <%= for (projectno, pp) in pair { %>
+                    <tr>
+                        <td>
+                            <%= pp.Basecamp.Projectno() %>
+                            <br />
+                            <%= for (t) in pp.Basecamp.Todos { %>
+                               <li> <%= t.Title %> </li> 
                             <% } %>
-                           </td>
-                        </tr>
-                    <% } %>
+                        </td>
+                        <td>
+                            <%= pp.Proad.Projectno %>
+                            <br />
+                            <%= for (t) in pp.Proad.Todos { %>
+                               <li> <%= t.Shortinfo %> </li> 
+                            <% } %>
+                        </td>
+                    </tr>
+                    <% } %>  
                 </tbody>
-              </table>
-          </div>
+            </table>
+        </div>
     </div>
 </div>

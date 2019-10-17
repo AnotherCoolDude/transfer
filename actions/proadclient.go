@@ -2,6 +2,7 @@ package actions
 
 import (
 	"crypto/tls"
+	"github.com/mitchellh/mapstructure"
 	"io"
 	"net/http"
 	"net/url"
@@ -54,15 +55,18 @@ func (c *proadclient) do(method, URL string, body io.Reader, query map[string]st
 	return resp, nil
 }
 
-func (c *proadclient) async(method, URL string, body io.Reader, query map[string]string, unmarshalChan chan asyncUnmarshal) {
-	au := asyncUnmarshal{}
-	resp, err := c.do(method, URL, body, query)
+func (c *proadclient) asyncUnmarshal(URL string, query map[string]string, unmarshalChan chan asyncUnmarshal) {
+	resp, err := c.do("GET", URL, http.NoBody, query)
+
 	if err != nil {
-		au.err = err
-		unmarshalChan <- au
+		unmarshalChan <- asyncUnmarshal{err: err}
 		return
 	}
+	au := asyncUnmarshal{}
 	au.err = unmarshalProad(resp, &au.model)
+	for _, v := range query {
+		au.breadcrumb = v
+	}
 	unmarshalChan <- au
 }
 
@@ -72,6 +76,14 @@ type asyncResponse struct {
 }
 
 type asyncUnmarshal struct {
-	model interface{}
-	err   error
+	model      interface{}
+	err        error
+	breadcrumb string
+}
+
+func (au *asyncUnmarshal) decode(model interface{}) error {
+	if au.err != nil {
+		return au.err
+	}
+	return mapstructure.Decode(au.model, &model)
 }

@@ -29,10 +29,9 @@ func BasecampShow(c buffalo.Context) error {
 		err := BCClient.unmarshal(p.Dock[2].URL, query{}, &pset)
 		if err != nil {
 			wg.Done()
-			return err
+			return c.Error(404, err)
 		}
 		sets = append(sets, pset)
-		return nil
 	}
 	wg.Wait()
 
@@ -55,7 +54,6 @@ func BasecampShow(c buffalo.Context) error {
 		}
 		todos = append(todos, ltodos...)
 	}
-
 	return c.Render(200, r.JSON(todos))
 
 }

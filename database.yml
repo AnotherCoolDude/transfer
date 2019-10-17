@@ -1,12 +1,12 @@
 ---
 development:
   dialect: "sqlite3"
-  database: /Users/mobile/go/src/github.com/AnotherCoolDude/transfer_transfer_development.sqlite
+  database: /Users/christianhovenbitzer/go/src/github.com/AnotherCoolDude/transfer_transfer_development.sqlite
 
 test:
   dialect: "sqlite3"
-  database: /Users/mobile/go/src/github.com/AnotherCoolDude/transfer_transfer_test.sqlite
+  database: /Users/christianhovenbitzer/go/src/github.com/AnotherCoolDude/transfer_transfer_test.sqlite
 
 production:
   dialect: "sqlite3"
-  database: /Users/mobile/go/src/github.com/AnotherCoolDude/transfer_transfer_production.sqlite
+  database: /Users/christianhovenbitzer/go/src/github.com/AnotherCoolDude/transfer_transfer_production.sqlite

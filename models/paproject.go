@@ -11,5 +11,5 @@ type PAProject struct {
 	OrderDate    string `json:"order_date" db:"order_date"`
 	DeliveryDate string `json:"delivery_date" db:"delivery_date"`
 	Description  string `json:"description" db:"description"`
-	Todos        *[]PATodo
+	Todos        []PATodo
 }
