@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/gobuffalo/buffalo"
 	"github.com/rs/xid"
 	"golang.org/x/oauth2"
 	"io"
@@ -95,14 +94,12 @@ func (c *basecampclient) async(method, URL string, body io.Reader, query map[str
 	responseChanel <- asyncResponse{response: resp, err: err}
 }
 
-func (c *basecampclient) asyncUnmarshal(ctx buffalo.Context, URL string, query map[string]string, unmarshalChannel chan asyncUnmarshal) {
+func (c *basecampclient) asyncUnmarshal(URL string, query map[string]string, unmarshalChannel chan asyncUnmarshal) {
 	resp, err := c.do("GET", URL, http.NoBody, query)
 	if err != nil {
 		unmarshalChannel <- asyncUnmarshal{err: err}
 		return
 	}
-	var copResp http.Response
-	copy(resp, &copResp)
 
 	au := asyncUnmarshal{}
 	au.err = unmarshal(resp, &au.model)

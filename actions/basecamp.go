@@ -1,6 +1,7 @@
 package actions
 
 import (
+	"encoding/json"
 	"github.com/AnotherCoolDude/transfer/models"
 	"github.com/gobuffalo/buffalo"
 	"net/http"
@@ -24,6 +25,13 @@ func BasecampShow(c buffalo.Context) error {
 	}
 
 	sets := []models.BCTodoset{}
+	for _, p := range projects {
+		wg.Add(1)
+		set, _ := BCClient.receiveFromURLAsync(&wg, p.Dock[2].URL, "Todoset", query{})
+		sets = append(sets, set.(models.BCTodoset))
+	}
+	wg.Wait()
+
 	for _, p := range projects {
 		var pset models.BCTodoset
 		err := BCClient.unmarshal(p.Dock[2].URL, query{}, &pset)
@@ -71,4 +79,43 @@ func BasecampCallback(c buffalo.Context) error {
 	}
 
 	return c.Redirect(http.StatusTemporaryRedirect, "rootPath()")
+}
+
+func (c *basecampclient) receiveFromURLAsync(wg *sync.WaitGroup, url string, modelType string, q query) {
+	defer wg.Done()
+	resp, err := c.do("GET", url, http.NoBody, q)
+	if err != nil {
+		return nil, err
+	}
+	bb, err := responseBytes(resp)
+	if err != nil {
+		return nil, err
+	}
+
+	var set models.BCTodoset
+	var lists []models.BCTodolist
+	var todos []models.BCTodo
+
+	switch modelType {
+	case "Todoset":
+		err = json.Unmarshal(bb, &set)
+		if err != nil {
+			return nil, err
+		}
+		return set, nil
+	case "Todolist":
+		err = json.Unmarshal(bb, &lists)
+		if err != nil {
+			return nil, err
+		}
+		return lists, nil
+	case "Todo":
+		err = json.Unmarshal(bb, &todos)
+		if err != nil {
+			return nil, err
+		}
+		return todos, nil
+	default:
+		return nil, err
+	}
 }
