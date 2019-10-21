@@ -1,11 +1,11 @@
 package actions
 
 import (
-	"net/http"
-	"strconv"
-
+	"fmt"
 	"github.com/AnotherCoolDude/transfer/models"
 	"github.com/gobuffalo/buffalo"
+	"net/http"
+	"sync"
 )
 
 var (
@@ -15,27 +15,33 @@ var (
 
 // ProadShow default implementation.
 func ProadShow(c buffalo.Context) error {
-	projectresp, err := PAClient.do("GET", "projects", http.NoBody, map[string]string{"projectno": "SEIN-0001-0190"})
-	if err != nil {
-		return c.Error(404, err)
-	}
+
 	var projects []models.PAProject
-	err = unmarshalProad(projectresp, &projects)
-	if err != nil {
-		c.Error(404, err)
-	}
-
-	todoResp, err := PAClient.do("GET", "tasks", http.NoBody, map[string]string{"project": strconv.Itoa(projects[0].Urno)})
+	projectsresp, err := PAClient.do("GET", "projects", http.NoBody, query{"projectno": "SEIN-0001-0190"})
 	if err != nil {
 		return c.Error(404, err)
 	}
-	var tds []models.PATodo
-	err = unmarshalProad(todoResp, &tds)
+	err = unmarshalProad(projectsresp, &projects)
 	if err != nil {
 		return c.Error(404, err)
 	}
+	if len(projects) == 0 {
+		return c.Error(400, fmt.Errorf("zero projects found: %v", projects))
+	}
 
-	c.Set("proad", projects)
-	c.Set("todos", tds)
-	return c.Render(200, r.HTML("proad/show.html"))
+	sem := make(chan int, 4)
+	errChan := make(chan error, 1)
+	var wg sync.WaitGroup
+	wg.Add(len(projects))
+
+	for i := range projects {
+		go PAClient.fetchTodosAsync(&projects[i], sem, &wg, errChan)
+	}
+	wg.Wait()
+	close(errChan)
+	if err = <-errChan; err != nil {
+		return c.Error(404, err)
+	}
+
+	return c.Render(404, r.JSON(projects))
 }

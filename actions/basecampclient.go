@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/AnotherCoolDude/transfer/models"
 	"github.com/rs/xid"
 	"golang.org/x/oauth2"
 	"io"
@@ -12,6 +13,7 @@ import (
 	"net/url"
 	"os"
 	"path"
+	"sync"
 )
 
 type basecampclient struct {
@@ -89,26 +91,6 @@ func (c *basecampclient) do(method, URL string, body io.Reader, query map[string
 	return resp, nil
 }
 
-func (c *basecampclient) async(method, URL string, body io.Reader, query map[string]string, responseChanel chan asyncResponse) {
-	resp, err := c.do(method, URL, body, query)
-	responseChanel <- asyncResponse{response: resp, err: err}
-}
-
-func (c *basecampclient) asyncUnmarshal(URL string, query map[string]string, unmarshalChannel chan asyncUnmarshal) {
-	resp, err := c.do("GET", URL, http.NoBody, query)
-	if err != nil {
-		unmarshalChannel <- asyncUnmarshal{err: err}
-		return
-	}
-
-	au := asyncUnmarshal{}
-	au.err = unmarshal(resp, &au.model)
-	for _, v := range query {
-		au.breadcrumb = v
-	}
-	unmarshalChannel <- au
-}
-
 func (c *basecampclient) baseURL() *url.URL {
 	urlString := fmt.Sprintf("https://3.basecampapi.com/%d/", c.id)
 	url, _ := url.Parse(urlString)
@@ -170,4 +152,57 @@ func (c *basecampclient) receiveID() error {
 	accDetails := accounts[0].(map[string]interface{})
 	c.id = int(accDetails["id"].(float64))
 	return nil
+}
+
+func (c *basecampclient) fetchTodos(project *models.BCProject) error {
+	setresp, err := c.do("GET", project.Dock[2].URL, http.NoBody, query{})
+	if err != nil {
+		return err
+	}
+	var set models.BCTodoset
+	err = unmarshal(setresp, &set)
+	if err != nil {
+		return err
+	}
+	if set.TodolistsCount == 0 {
+		return nil
+	}
+	listresp, err := c.do("GET", set.TodolistsURL, http.NoBody, query{})
+	if err != nil {
+		return err
+	}
+	var lists []models.BCTodolist
+	err = unmarshal(listresp, &lists)
+	if err != nil {
+		return err
+	}
+	todos := []models.BCTodo{}
+	for _, l := range lists {
+		todoresp, err := c.do("GET", l.TodosURL, http.NoBody, query{})
+		if err != nil {
+			return err
+		}
+		var tt []models.BCTodo
+		err = unmarshal(todoresp, &tt)
+		if err != nil {
+			return err
+		}
+		todos = append(todos, tt...)
+	}
+	project.Todos = todos
+	return nil
+}
+
+func (c *basecampclient) fetchTodosAsync(project *models.BCProject, sem chan int, wg *sync.WaitGroup, errChan chan error) {
+	defer wg.Done()
+	sem <- 1
+	if err := c.fetchTodos(project); err != nil {
+		select {
+		case errChan <- err:
+			// we are the first worker to fail
+		default:
+			// there allready happend an error
+		}
+	}
+	<-sem
 }

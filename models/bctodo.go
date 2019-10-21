@@ -49,3 +49,18 @@ func (t *BCTodo) Projectno() string {
 	}
 	return nr
 }
+
+// Timestamp is a identifier for comparing with other todos
+func (t BCTodo) Timestamp() string {
+	return t.CreatedAt.Format(time.RFC3339)
+}
+
+// Identifier returns a unique identifier
+func (t BCTodo) Identifier() int {
+	return t.ID
+}
+
+// ClientType returns the type of Todo
+func (t BCTodo) ClientType() string {
+	return "basecamp"
+}

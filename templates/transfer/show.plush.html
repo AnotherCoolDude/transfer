@@ -31,29 +31,50 @@
             <table class="table table-striped">
                 <thead class="thead-dark">
                     <tr text-align="left">
-                        <th>Basecamp </th>
-                        <th>Proad </th>
+                        <th>Projectno</th>
+                        <th>Basecamp</th>
+                        <th>Proad</th>
+                        <th>Transfer</th>
                     </tr>
                 </thead>
                 <tbody>
                     <%= for (projectno, pp) in pair { %>
                     <tr>
                         <td>
-                            <%= pp.Basecamp.Projectno() %>
-                            <br />
+                            <%= projectno %>
+                        </td>
+
+                        <%= for (i, t) in pp.Basecamp.Todos { %>
+                        <td>
+                            <li> <%= t.Title %> </li>
+                        </td>
+                        <%= if ( (i < len(pp.Proad.Todos)) && (t.Timestamp() == pp.Proad.Todos[i].Timestamp()) ) { %>
+                        <td>
+                            <li> <%= pp.Proad.Todos[i].Shortinfo %> </li>
+                        </td>
+                        <% } else { %>
+                        <td>
+                            <li> <%= "no todo found" %> </li>
+                        </td>
+                        <% } %>
+                        <% } %>
+
+
+                        <!-- <td>
                             <%= for (t) in pp.Basecamp.Todos { %>
-                               <li> <%= t.Title %> </li> 
+                            <li> <%= t.Title %> </li>
                             <% } %>
                         </td>
                         <td>
-                            <%= pp.Proad.Projectno %>
-                            <br />
                             <%= for (t) in pp.Proad.Todos { %>
-                               <li> <%= t.Shortinfo %> </li> 
+                            <li> <%= t.Shortinfo %> </li>
                             <% } %>
+                        </td> -->
+                        <td>
+                            <button type="button" class="btn btn-primary">Transfer</button>
                         </td>
                     </tr>
-                    <% } %>  
+                    <% } %>
                 </tbody>
             </table>
         </div>

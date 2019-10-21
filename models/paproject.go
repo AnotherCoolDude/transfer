@@ -1,5 +1,10 @@
 package models
 
+import (
+	"sort"
+	"time"
+)
+
 // PAProject wraps the json respond from proad into a go struct
 type PAProject struct {
 	Urno         int    `json:"urno" db:"id"`
@@ -12,4 +17,16 @@ type PAProject struct {
 	DeliveryDate string `json:"delivery_date" db:"delivery_date"`
 	Description  string `json:"description" db:"description"`
 	Todos        []PATodo
+}
+
+// SortTodos sorts todos using the FromDatetime property
+func (p *PAProject) SortTodos() {
+	sort.Slice((*p).Todos, func(i, j int) bool {
+		ti, err := time.Parse(time.RFC3339, ((*p).Todos)[i].FromDatetime)
+		tj, err := time.Parse(time.RFC3339, ((*p).Todos)[j].FromDatetime)
+		if err != nil {
+			panic(0)
+		}
+		return ti.Before(tj)
+	})
 }

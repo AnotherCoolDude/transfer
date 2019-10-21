@@ -2,6 +2,7 @@ package models
 
 import (
 	"github.com/gobuffalo/nulls"
+	"sort"
 	"time"
 	"unicode"
 )
@@ -45,4 +46,11 @@ func (p *BCProject) Projectno() string {
 		}
 	}
 	return nr
+}
+
+// SortTodos sorts todos using the CreatedAt property
+func (p *BCProject) SortTodos() {
+	sort.Slice((*p).Todos, func(i, j int) bool {
+		return ((*p).Todos)[i].CreatedAt.Before(((*p).Todos)[j].CreatedAt)
+	})
 }
