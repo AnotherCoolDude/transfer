@@ -9,12 +9,12 @@ import (
 // TransferShow default implementation.
 func TransferShow(c buffalo.Context) error {
 
-	// Projectpair wraps a pair of basecamp and Proad projects into a struct
-	type Projectpair struct {
-		Basecamp models.BCProject
-		Proad    models.PAProject
-	}
-	projectsmap := map[string]Projectpair{}
+	// // Projectpair wraps a pair of basecamp and Proad projects into a struct
+	// type Projectpair struct {
+	// 	Basecamp models.BCProject
+	// 	Proad    models.PAProject
+	// }
+	// projectsmap := map[string]Projectpair{}
 
 	// error to minimize allocation
 	var err error
@@ -78,27 +78,57 @@ func TransferShow(c buffalo.Context) error {
 		return c.Error(404, err)
 	}
 
-	//sort todos
-	for i := range bcprojects {
-		bcprojects[i].SortTodos()
-		paprojects[i].SortTodos()
+	c.Logger().Debug("fetched all projects and todos")
+
+	// sort todos
+	sortedProjects := map[string]*models.ClienttypeSorting{}
+	clienttypes := []string{}
+	tt := models.Todos{}
+	for i, prj := range bcprojects {
+		if len(prj.Todos) == 0 {
+			continue
+		}
+		for _, t := range prj.Todos {
+			tt = append(tt, t)
+		}
+		if len(paprojects[i].Todos) == 0 {
+			continue
+		}
+		for _, t := range paprojects[i].Todos {
+			tt = append(tt, t)
+		}
+		sortedProjects[prj.Projectno()] = tt.SortByClienttype()
 	}
+	c.Logger().Debugf("got all todos sorted by client")
 
-	tt := []models.Todo{}
-
-	// fill struct to better access data in template
-	for _, bcp := range bcprojects {
-		for _, pap := range paprojects {
-			if pap.Projectno == bcp.Projectno() {
-				projectsmap[pap.Projectno] = Projectpair{
-					Basecamp: bcp,
-					Proad:    pap,
-				}
+	for _, cts := range sortedProjects {
+		if len(clienttypes) == 0 {
+			clienttypes = cts.Clienttypes()
+		}
+		for ct, tt := range *cts {
+			if ct == "basecamp" {
+				continue
 			}
+			tt.SortedByCounterpart((*cts)[ct])
 		}
 	}
 
+	c.Logger().Debugf("sorted projects: %+v\n", sortedProjects)
+
+	// // fill struct to better access data in template
+	// for _, bcp := range bcprojects {
+	// 	for _, pap := range paprojects {
+	// 		if pap.Projectno == bcp.Projectno() {
+	// 			projectsmap[pap.Projectno] = Projectpair{
+	// 				Basecamp: bcp,
+	// 				Proad:    pap,
+	// 			}
+	// 		}
+	// 	}
+	// }
+
 	// return c.Render(200, render.JSON(paprojects))
-	c.Set("pair", projectsmap)
+	c.Set("clienttypes", clienttypes)
+	c.Set("projects", sortedProjects)
 	return c.Render(200, r.HTML("transfer/show.html"))
 }

@@ -32,33 +32,26 @@
                 <thead class="thead-dark">
                     <tr text-align="left">
                         <th>Projectno</th>
-                        <th>Basecamp</th>
-                        <th>Proad</th>
+                        <%= for (clienttype) in clienttypes { %>
+                        <th> <%= clienttype %> </th>
+                        <% } %>
                         <th>Transfer</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <%= for (projectno, pp) in pair { %>
+                    <%= for (projectno, clientmap) in sortedProjects { %>
                     <tr>
                         <td>
                             <%= projectno %>
                         </td>
 
-                        <%= for (i, t) in pp.Basecamp.Todos { %>
-                        <td>
-                            <li> <%= t.Title %> </li>
-                        </td>
-                        <%= if ( (i < len(pp.Proad.Todos)) && (t.Timestamp() == pp.Proad.Todos[i].Timestamp()) ) { %>
-                        <td>
-                            <li> <%= pp.Proad.Todos[i].Shortinfo %> </li>
-                        </td>
-                        <% } else { %>
-                        <td>
-                            <li> <%= "no todo found" %> </li>
-                        </td>
-                        <% } %>
-                        <% } %>
-
+                        <%= for (clienttype) in clienttypes { %>
+                            <td>
+                            <%= for (t) in clientmap[clienttype] { %>
+                                <li><%= t.Timestamp() %></li>
+                            <%= } %>
+                            </td>
+                        <%= } %>
 
                         <!-- <td>
                             <%= for (t) in pp.Basecamp.Todos { %>
