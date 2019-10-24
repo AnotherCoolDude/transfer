@@ -114,3 +114,36 @@ func (tt *Todos) SortedByCounterpart(cp *Todos) {
 	sorted = append(sorted, unmatched...)
 	tt = &sorted
 }
+
+// Equivalent returns the equivalent and index from slice or an empty todo
+func Equivalent(t Todo, slice []Todo) (Todo, int) {
+	index := -1
+	if len(slice) == 0 {
+		return EmptyTodo{ct: "proad"}, index
+	}
+	ct := slice[0].ClientType()
+	for i, st := range slice {
+		if st.Timestamp() == t.Timestamp() {
+			return st, i
+		}
+	}
+	return EmptyTodo{ct: ct}, index
+}
+
+// MissingTodos returns all todos, which do not have a index in indexes
+func MissingTodos(slice []Todo, indexes ...int) []Todo {
+	mt := []Todo{}
+	existing := false
+	for i, st := range slice {
+		for _, idx := range indexes {
+			if i == idx {
+				existing = true
+			}
+		}
+		if !existing {
+			mt = append(mt, st)
+		}
+		existing = false
+	}
+	return mt
+}

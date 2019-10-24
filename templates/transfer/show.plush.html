@@ -32,37 +32,27 @@
                 <thead class="thead-dark">
                     <tr text-align="left">
                         <th>Projectno</th>
-                        <%= for (clienttype) in clienttypes { %>
-                        <th> <%= clienttype %> </th>
-                        <% } %>
+                        <th>Basecamp</th>
+                        <th>Proad</th>
                         <th>Transfer</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <%= for (projectno, clientmap) in sortedProjects { %>
+                    <%= for (projectno, pair) in projectsmap { %>
                     <tr>
                         <td>
                             <%= projectno %>
                         </td>
-
-                        <%= for (clienttype) in clienttypes { %>
-                            <td>
-                            <%= for (t) in clientmap[clienttype] { %>
-                                <li><%= t.Timestamp() %></li>
-                            <%= } %>
-                            </td>
-                        <%= } %>
-
-                        <!-- <td>
-                            <%= for (t) in pp.Basecamp.Todos { %>
+                        <td>
+                            <%= for (t) in pair.Basecamp.Todos { %>
                             <li> <%= t.Title %> </li>
                             <% } %>
                         </td>
                         <td>
-                            <%= for (t) in pp.Proad.Todos { %>
+                            <%= for (t) in pair.Proad.Todos { %>
                             <li> <%= t.Shortinfo %> </li>
                             <% } %>
-                        </td> -->
+                        </td>
                         <td>
                             <button type="button" class="btn btn-primary">Transfer</button>
                         </td>

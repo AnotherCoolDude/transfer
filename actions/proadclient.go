@@ -85,23 +85,6 @@ func (c *proadclient) fetchProjectAsync(projectno string, project *models.PAProj
 	<-sem
 }
 
-// func (c *proadclient) fetchProjects(projectnumbers []string) ([]models.PAProject, error) {
-// 	projects := []models.PAProject{}
-// 	for _, projectno := range projectnumbers {
-// 		projectresp, err := c.do("GET", "projects", http.NoBody, query{"projectno": projectno})
-// 		if err != nil {
-// 			return projects, err
-// 		}
-// 		var project models.PAProject
-// 		err = unmarshalProad(projectresp, &project)
-// 		if err != nil {
-// 			return projects, err
-// 		}
-// 		projects = append(projects, project)
-// 	}
-// 	return projects, nil
-// }
-
 func (c *proadclient) fetchTodos(project *models.PAProject) error {
 	todosresp, err := c.do("GET", "tasks", http.NoBody, query{"project": strconv.Itoa(project.Urno)})
 	if err != nil {
@@ -111,6 +94,9 @@ func (c *proadclient) fetchTodos(project *models.PAProject) error {
 	err = unmarshalProad(todosresp, &todos)
 	if err != nil {
 		return err
+	}
+	for i := range todos {
+		todos[i].Project = project
 	}
 	project.Todos = todos
 	return nil
@@ -130,35 +116,22 @@ func (c *proadclient) fetchTodosAsync(project *models.PAProject, sem chan int, w
 	<-sem
 }
 
-// func (c *proadclient) asyncUnmarshal(URL string, query map[string]string, unmarshalChan chan asyncUnmarshal) {
-// 	resp, err := c.do("GET", URL, http.NoBody, query)
-
-// 	if err != nil {
-// 		unmarshalChan <- asyncUnmarshal{err: err}
-// 		return
-// 	}
-// 	au := asyncUnmarshal{}
-// 	au.err = unmarshalProad(resp, &au.model)
-// 	for _, v := range query {
-// 		au.breadcrumb = v
-// 	}
-// 	unmarshalChan <- au
-// }
-
-// type asyncResponse struct {
-// 	response *http.Response
-// 	err      error
-// }
-
-// type asyncUnmarshal struct {
-// 	model      interface{}
-// 	err        error
-// 	breadcrumb string
-// }
-
-// func (au *asyncUnmarshal) decode(model interface{}) error {
-// 	if au.err != nil {
-// 		return au.err
-// 	}
-// 	return mapstructure.Decode(au.model, &model)
-// }
+func (c *proadclient) CreateTodoFromBasecamp(basecampTodo models.BCTodo, proadProject models.PAProject) error {
+	type postTask struct {
+			UrnoManager      int    `json:"urno_manager"`
+			UrnoCompany      int    `json:"urno_company"`
+			UrnoProject      int    `json:"urno_project"`
+			UrnoServiceCode  int    `json:"urno_service_code"`
+			UrnoResponsible  int    `json:"urno_responsible"`
+			Shortinfo        string `json:"shortinfo"`
+			FromDatetime     string `json:"from_datetime"`
+			UntilDatetime    string `json:"until_datetime"`
+			ReminderDatetime string `json:"reminder_datetime"`
+			Status           string `json:"status"`
+			Priority         string `json:"priority"`
+			Description      string `json:"description"`
+	}
+	
+	fromdate := basecampTodo.CreatedAt.Format("2006-01-02T15:04:05")
+	pt := postTask{UrnoCompany: proadProject.}
+}
