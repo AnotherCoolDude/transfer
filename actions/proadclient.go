@@ -117,6 +117,9 @@ func (c *proadclient) fetchTodosAsync(project *models.PAProject, sem chan int, w
 }
 
 func (c *proadclient) CreateTodoFromBasecamp(basecampTodo models.BCTodo, proadProject models.PAProject) error {
+	
+	// Todo fetch full project from projecturno to fill out proper posttask
+	
 	type postTask struct {
 			UrnoManager      int    `json:"urno_manager"`
 			UrnoCompany      int    `json:"urno_company"`
